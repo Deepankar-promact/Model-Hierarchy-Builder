@@ -29,7 +29,8 @@ namespace ModelHierarchyBuilder
         /// <summary>
         /// Build the model hierarchy
         /// </summary>
-        public void Build()
+        /// <param name="namespaceToSearch">Partial or Full namespace to search</param>
+        public void Build(string namespaceToSearch)
         {
             Type[] types;
             try
@@ -42,13 +43,33 @@ namespace ModelHierarchyBuilder
             }
 
             //Traverse member classes
-            foreach (var type in types.Where(x => x != null && x.FullName.Contains("DomainModel.Models.")))
+            foreach (var type in types.Where(x => x != null && x.FullName.Contains(namespaceToSearch)))
             {
                 try
                 {
                     var properties = type.GetRuntimeProperties();
+                                        
+                    List<Type> dependentModel = new List<Type>();
+                    
+                    foreach (var property in properties)
+                    {
+                        var customAttrs = property.GetCustomAttributes(true).Where(y => y.GetType().FullName.Contains("ForeignKey")).ToList();
+                        if ( customAttrs.Count() > 0 && property.PropertyType.FullName.Contains("Int32"))
+                        {
+                            var customAttr = property
+                                .GetCustomAttributes(true)
+                                .FirstOrDefault(y => y.GetType().FullName.Contains("ForeignKey"));
 
-                    var dependentModel = properties.Where(x =>x.GetCustomAttributes(true).Any(y => y.GetType().FullName.Contains("ForeignKey"))).Select(x => x.PropertyType).ToList();
+                            var virtualPropertyName = customAttr.GetType().GetProperty("Name").GetValue(customAttr);
+                            var virtualProperty = properties.SingleOrDefault(x => x.GetMethod.IsVirtual && x.Name.Equals(virtualPropertyName));
+
+                            dependentModel.Add(virtualProperty.PropertyType);
+                        }else if(customAttrs.Count() > 0)
+                        {
+                            dependentModel.Add(property.PropertyType);
+                        }
+                    }
+
                     if (dependentModel.Count() > 0)
                     {
                         modelDictionary.Add(type, dependentModel);

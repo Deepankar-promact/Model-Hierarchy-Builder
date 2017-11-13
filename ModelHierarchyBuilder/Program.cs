@@ -8,7 +8,7 @@ namespace ModelHierarchyBuilder
         {           
             var hierarchyBuilder = new HierarchyBuilder(@"\\server12\Deepankar\Visualogyx.DomainModel.dll");
 
-            hierarchyBuilder.Build();
+            hierarchyBuilder.Build("DomainModel.Models.");
 
             //Returns a linked list
             var list = hierarchyBuilder.CreateList();
